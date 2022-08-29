@@ -1,0 +1,133 @@
+{% extends 'index.html' %}
+
+{% load static %}
+
+{% block usuario %}
+
+    <a href="#" class="d-block">Danilo Devia</a>
+
+{% endblock usuario %}
+
+
+{% block titulo %}
+
+    <h1 class="m-0">Ingrese la Traduccion</h1>
+
+{% endblock titulo %}
+
+
+{% block contenido %}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6"> <!--Primer columna-->
+
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">Cual es el significado del verbo?</h3>
+                    </div>
+                                        
+                    <form action="respuesta" method="POST" class="form-horizontal">
+                        {% csrf_token %}
+                        <div class="card-body">
+
+
+                            <div class="form-group row">                            
+                                <label class="form-label">{{etiqueta}}</label>
+                                <input class="form-control" type="text" name="verbo_traducido" placeholder="Verbo en español...">
+                                <input class="form-control" type="hidden" name="verbo" value={{input_oculto}}>
+                                
+                            </div>
+
+
+                        </div>
+                            
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info">Aceptar</button>
+                            <button type="submit" class="btn btn-default float-right">Cancelar</button>
+                        </div>
+                        
+                    </form>
+                            
+                </div>
+            </div>
+
+            <div class="card"> <!--Segunda columna-->
+                <div class="card-header">
+                    <h3 class="card-title">Tabla de Resultado</h3>
+                </div>
+                
+                <div class="card-body p-0">
+                    <table class="table table-sm">
+
+                    <thead>
+                        <tr>
+                            <th style="width: 10px">#</th>
+                            <th>Resultado</th>
+                            <th>Progreso</th>
+                            <th style="width: 40px">Cantidad</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>1.</td>
+                            <td>Cantidad de verbos restantes</td>
+                            <td>
+                                    <div class="progress progress-xs">
+                                        <div class="progress-bar progress-bar-primary" style="width: 55%"></div>
+                                    </div>
+                                </td>
+                            <td><span class="badge bg-primary">{{cantidad_de_verbos}}</span></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>2.</td>
+                            <td>Respuestas correctas</td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-success" style="width: 70%"></div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-success">{{correctas}}</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>3.</td>
+                            <td>Respuestas incorrectas</td>
+                            <td>
+                                <div class="progress progress-xs progress-striped active">
+                                    <div class="progress-bar bg-danger" style="width: 30%"></div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-danger">{{incorrectas}}</span></td>
+                        </tr>
+                  
+                    </tbody>
+
+                    </table>
+                </div>
+                
+            </div>
+
+
+        </div>
+
+
+
+
+
+        <div class="row"> <!--Segunda fila-->
+            <div class="col-12">
+
+                {% include 'tabla_respuestas_incorrectas.html' %}
+
+            </div>
+        </div>
+
+
+    </div>
+</section>
+
+{% endblock contenido %}
