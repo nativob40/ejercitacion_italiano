@@ -1,28 +1,67 @@
-from multiprocessing.sharedctypes import Value
-from optparse import Values
-from unicodedata import name
 from django.shortcuts import render
 from django.views.generic import TemplateView
-from django import http
-from django.http import HttpResponse
-from django.template import loader
 import pandas as pd
 from script.lectura_csv import *
-from app_italiano.forms import Formulario_traduccion
-from app_italiano.models import Traduccion_de_verbos
-import copy
-
-
-# Create your views here.
+from app_italiano.forms import Formulario_traduccion,Formulario_conjugacion
+from app_italiano.models import Conjugacion_futuro_semplice, Conjugacion_presente_semplice, Conjugacion_passato_prossimo ,Traduccion_de_verbos
 
 
 df_presente_simple = pd.read_csv('script/csv/presente.csv')
-#df_passato_prossimo = pd.read_csv('/home/danilo/Python/Django/italiano/csv/passato_prossimo.csv')
-#df_futuro_semplice = pd.read_csv('/home/danilo/Python/Django/italiano/csv/futuro_semplice.csv')
+df_passato_prossimo = pd.read_csv('script/csv/passato_prossimo.csv')
+df_futuro_semplice = pd.read_csv('script/csv/futuro_semplice.csv')
 
 df_traduccion = pd.read_csv('script/csv/traduccion.csv')
 df_traduccion.drop(['Unnamed: 0'], axis = 'columns', inplace=True)
     
+################################ ESTO SOLO SE USA PARA CARGAR LOS VERBOS A LA BBDD ############################
+
+'''   
+############################################ TRADUCCION ########################################################
+
+df_lista_de_verbos = pd.read_csv('script/csv/traduccion.csv')
+df_lista_de_verbos.drop(['Unnamed: 0'], axis = 'columns', inplace=True)
+
+for i in range(len(df_lista_de_verbos.columns)):
+    datos = Traduccion_de_verbos(verbo = df_lista_de_verbos.columns[i],
+                                traduccion_uno = df_lista_de_verbos.iloc[0].values[i],
+                                traduccion_dos = df_lista_de_verbos.iloc[1].values[i])
+    datos.save()
+
+############################################ PRESENTE SEMPLICE ########################################################
+
+for verbos in range(1,len(df_presente_simple.columns)):
+    for i in range(len(df_presente_simple)):
+        datos = Conjugacion_presente_semplice(verbo = df_presente_simple.columns[verbos],
+                                              persona = df_presente_simple['Unnamed: 0'][i],
+                                              conjugacion = df_presente_simple[f'{df_presente_simple.columns[verbos]}'][i])
+        datos.save()
+
+############################################ PASSATO PROSSIMO ########################################################
+
+for verbos in range(1,len(df_passato_prossimo.columns)):
+    for i in range(len(df_passato_prossimo)):
+        aux,verbo_conjugado = df_passato_prossimo[f'{df_passato_prossimo.columns[verbos]}'][i].split(' ')
+        datos = Conjugacion_passato_prossimo(verbo = df_passato_prossimo.columns[verbos],
+                                              persona = df_passato_prossimo['Unnamed: 0'][i],
+                                              auxiliar = aux,
+                                              conjugacion = verbo_conjugado)
+        datos.save() 
+
+############################################ FUTURO SEMPLICE ########################################################
+
+for verbos in range(1,len(df_futuro_semplice.columns)):
+    for i in range(len(df_futuro_semplice)):
+        datos = Conjugacion_futuro_semplice(verbo = df_futuro_semplice.columns[verbos],
+                                              persona = df_futuro_semplice['Unnamed: 0'][i],
+                                              conjugacion = df_futuro_semplice[f'{df_futuro_semplice.columns[verbos]}'][i])
+        datos.save()
+'''
+
+###############################################################################################################
+
+class Resultados(TemplateView):
+    
+    template_name = 'resultados.html'
 
 class Juego(TemplateView):
     
@@ -45,11 +84,11 @@ class Juego(TemplateView):
                     Juego.correctas += 1
                     verbo_eliminar = datos['verbo']
                     df_presente_simple.drop([f'{verbo_eliminar}'], axis = 'columns', inplace=True)
-                    return render(request, 'respuesta_correcta.html',{'dato':datos})
+                    return render(request, 'respuesta_correcta.html',{'dato':datos,'significado':verbo[1]})
                 else:
                     Juego.incorrectas += 1
                     Juego.listado_incorrectas.append(verbo)
-                    return render(request, 'respuesta_incorrecta.html',{'dato':datos})
+                    return render(request, 'respuesta_incorrecta.html',{'dato':datos,'significado':verbo[1]})
                                                                       
 
   
@@ -61,104 +100,74 @@ class Juego(TemplateView):
         v_aleatorio = Verbo.verbo_aleatorio(df_presente_simple)[0]   
         context = super().get_context_data(**kwargs)
 
-        ###########
+        ########### Cual es el significado del verbo? ###########
         context['etiqueta'] = v_aleatorio.upper()
         context['input_oculto'] = v_aleatorio
+
         ########### Tabla de Resultados ###########
         context['cantidad_de_verbos'] = df_presente_simple.shape[1]-1
+        context['porcentaje_cantidad_de_verbos'] = (df_presente_simple.shape[1]-1) * 100 / 250
+        #--------------------------------------------------------------------------------------#
         context['correctas'] = Juego.correctas
+        context['porcentaje_correctas'] = Juego.correctas * 100 / 250
+        #--------------------------------------------------------------------------------------#
         context['incorrectas'] = Juego.incorrectas
+        context['porcentaje_incorrectas'] = Juego.incorrectas * 100 / 250
+
+        ########### Tabla de Respuestas Incorrectas ###########
         context['tabla_significado'] = Juego.listado_incorrectas
         
 
         
         return context
 
-
-
-
-
-
-
-
-'''
-    def juego_traduccion():
-        correctas = 0
-        incorrectas = 0
-        listado_incorrectas = []
-
-        cantidad_verbos = Verbo.df_presente_simple.shape[1]-1
-
-        while(cantidad_verbos != 0):
-            
-            print(Verbo.df_presente_simple().shape[1]-1)
-            verbo = Verbo.verbo_aleatorio(Verbo.df_presente_simple)[0]
-            print(f'Que significa la palabra: {verbo.upper()}')
-
-            palabra = input('\nIngresa la traduccion: ') 
-            elementos = Verbo.traduccion(verbo,palabra)
-
-
-            if elementos[2] == 'Correcto':
-                correctas += 1
-                print(f'{elementos[2].upper()}!!!!\n')
-                print(f'Otros resultados posibles son: {elementos[1]}')
-
-                print(f'\nCorrectas = {correctas}\nIncorrectas = {incorrectas}\n')
-                Verbo.df_presente_simple.drop([f'{verbo}'], axis = 'columns', inplace=True)
-
-            else:
-                incorrectas += 1
-                print(f'{elementos[2].upper()}!!!!\n')
-                print(f'Palabras correctas son: {elementos[1]}')
-
-                print(f'\nCorrectas = {correctas}\nIncorrectas = {incorrectas}\n')
-
-                listado_incorrectas.append(verbo)
-                
-            cantidad_verbos -= 1
-
-            salir = input('Desea Salir? S/N\n')  
-            
-            if salir == 's':
-                print(f'\nPALABRAS INCORRECTAS:')
-                for i in set(listado_incorrectas):
-                    print(f"- {i.upper()}, que significa: {list(Verbo.df_traduccion[str(i)])}")
-                break
-                
-        print(f'\nFELICITACIONES!!!')
-        print('EJERCICIO COMPLETADO\n\nRESULTADO:')
-        print(f'\n- Correctas = {correctas}\n- Incorrectas = {incorrectas}\n')
-'''
-
-
-
-class Resultados(TemplateView):
+class Listadeverbos(TemplateView):
     
-    template_name = 'resultados.html'
+    template_name = 'tabla_de_verbos.html'
 
-
-
-class DasboardView(TemplateView):
-    
-    template_name = 'index.html'
-
-    df_presente_simple = pd.read_csv('script/csv/presente.csv')
-        #df_passato_prossimo = pd.read_csv('/home/danilo/Python/Django/italiano/csv/passato_prossimo.csv')
-        #df_futuro_semplice = pd.read_csv('/home/danilo/Python/Django/italiano/csv/futuro_semplice.csv')
-
-        #df_traduccion = pd.read_csv('/home/danilo/Python/Django/italiano/csv/traduccion.csv')
-        #df_traduccion.drop(['Unnamed: 0'], axis = 'columns', inplace=True)
-
+    df_lista_de_verbos = pd.read_csv('script/csv/traduccion.csv')
+    df_lista_de_verbos.drop(['Unnamed: 0'], axis = 'columns', inplace=True)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         ###########
-        context['nombre'] = 'Danilo Devia'#self.payterms()
-        context['verbo'] = Verbo.verbo_aleatorio(Verbo.df_presente_simple)[0]
-        ###########
-
+        context['lista'] = Traduccion_de_verbos.objects.all()
         
         return context
+
+class Conjugaciones(TemplateView):
+    
+    template_name = 'conjugaciones.html'
+
+    def presente(verbo):
+        persona = list(df_presente_simple['Unnamed: 0'])
+        cant_personas = list(range(len(persona)))
+        conjugacion = list(df_presente_simple[f'{verbo}'].values)
+
+        dict_conjugacion = {'range':cant_personas,'persona':persona,'conjugacion':conjugacion}
+        print(dict_conjugacion)
+        return dict_conjugacion
+
+    def formulario_conjugacion(request):
+            
+        if request.method == "POST":
+            mi_formulario = Formulario_conjugacion(request.POST)
+
+            if mi_formulario.is_valid():
+                datos = mi_formulario.cleaned_data
+                verbo_conjugado_presente = Conjugacion_presente_semplice.objects.filter(verbo=datos['verbo'])
+                verbo_conjugado_pasado = Conjugacion_passato_prossimo.objects.filter(verbo=datos['verbo'])
+                verbo_conjugado_futuro = Conjugacion_futuro_semplice.objects.filter(verbo=datos['verbo'])
+
+
+                return render(request, 'conjugaciones.html',{'dato_presente_semplice':verbo_conjugado_presente,
+                                                             'dato_passato_prossimo':verbo_conjugado_pasado,
+                                                             'dato_futuro_semplice':verbo_conjugado_futuro})
+
+def about(request):
+
+    return render( request , "about.html" )
+
+
 
 

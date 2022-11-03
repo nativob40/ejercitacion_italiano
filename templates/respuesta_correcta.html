@@ -1,19 +1,25 @@
 {% extends 'index.html' %}
 {% load static %}
 
+{% block usuario %}
+
+    <a href="#" class="d-block">Danilo Devia</a>
+
+{% endblock usuario %}
+
 {% block contenido %}
 
 <section class="content">
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-6"> <!--Primer columna-->
+            <div class="col-md-4"> <!--Primer columna-->
 
                 <div class="alert alert-success" role="alert">
                     <h4 class="alert-heading">Bien Hecho!</h4>
                     <p>La respuesta correcta es {{dato.verbo_traducido}}</p>
                     <hr>
                     <p class="mb-0">Otras respuestas correctas son: </p>
-                        <ul class="list-group">
+                        <ul class="list-group col-md-6">
                             {% for palabra in significado %}
                                 <li class="list-group-item list-group-item-light">{{palabra}}</li>
                             {% endfor %}
